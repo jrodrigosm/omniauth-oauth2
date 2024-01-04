@@ -82,17 +82,27 @@ module OmniAuth
       end
 
       def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+        log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - Starting with request.params #{request.params}"
         error = request.params["error_reason"] || request.params["error"]
+        log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - error is #{error}"
         if !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+          log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - csrf_detected"
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         elsif error
+          log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - There is an error, failing."
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
         else
+          log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - No error, building access_token"
           self.access_token = build_access_token
+          log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - access_token built, access_token is #{access_token}"
+          log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - access_token.expired? = #{access_token.expired?}"
           self.access_token = access_token.refresh! if access_token.expired?
+          log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - access_token is now #{access_token}"
+          log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - Calling super"
           super
         end
       rescue ::OAuth2::Error, CallbackError => e
+        log :debug, "***** Omniauth::Strategies::OAuth2#callback_phase - Caught either ::OAuth2::Error or CallbackError, error is #{e.inspect}"
         fail!(:invalid_credentials, e)
       rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
         fail!(:timeout, e)
