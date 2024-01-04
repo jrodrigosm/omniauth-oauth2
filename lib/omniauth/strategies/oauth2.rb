@@ -44,6 +44,8 @@ module OmniAuth
       attr_accessor :access_token
 
       def client
+        log :debug, "***** Omniauth::Strategies::OAuth2#client - Starting"
+        log :debug, "***** Omniauth::Strategies::OAuth2#client - Creating new client with params options.client_id = #{options.client_id}, options.client_secret = #{options.client_secret}, options.client_options = #{deep_symbolize(options.client_options)}"
         ::OAuth2::Client.new(options.client_id, options.client_secret, deep_symbolize(options.client_options))
       end
 
@@ -132,7 +134,9 @@ module OmniAuth
       end
 
       def build_access_token
+        log :debug, "***** Omniauth::Strategies::OAuth2#build_access_token - Starting"
         verifier = request.params["code"]
+        log :debug, "***** Omniauth::Strategies::OAuth2#build_access_token - verifier is #{verifier}"
         client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
